@@ -5,14 +5,15 @@ namespace App\Http\Requests;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
-class StoreInvoiceRequest extends FormRequest
+class BulkStoreInvoiceRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
      */
     public function authorize(): bool
     {
-        return false;
+        $user = $this->user();
+        return $user != null && $user->tokenCan('create');
     }
 
     /**
@@ -33,8 +34,16 @@ class StoreInvoiceRequest extends FormRequest
 
     protected function prepareForValidation()
     {
-        $this->merge([
-            'postal_code' => $this->postalCode
-        ]);
+        $data = [];
+
+        foreach($this->toArray() as $obj) {
+            $obj['customer_id'] = $obj['customerId'] ?? null;
+            $obj['billed_date'] = $obj['billedDate'] ?? null;
+            $obj['paid_date'] = $obj['paidDate'] ?? null;
+
+            $data[] = $obj;
+
+            $this->merge($data);
+        }
     }
 }
